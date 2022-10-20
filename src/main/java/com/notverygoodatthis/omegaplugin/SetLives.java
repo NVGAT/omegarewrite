@@ -15,10 +15,14 @@ public class SetLives implements CommandExecutor {
             Player target = Bukkit.getPlayerExact(args[0]);
             int newLives = Integer.parseInt(args[1]);
             try {
-                OmegaPlugin.playerLives.remove(target.getName(), OmegaPlugin.playerLives.get(target.getName()));
-                OmegaPlugin.playerLives.put(target.getName(), newLives);
-                for(Player p : Bukkit.getServer().getOnlinePlayers()) {
-                    p.playerListName(Component.text("[" + OmegaPlugin.playerLives.get(target.getName()) + "] " + target.getName()));
+                if(newLives < 5) {
+                    OmegaPlugin.playerLives.remove(target.getName(), OmegaPlugin.playerLives.get(target.getName()));
+                    OmegaPlugin.playerLives.put(target.getName(), newLives);
+                    for(Player p : Bukkit.getServer().getOnlinePlayers()) {
+                        p.playerListName(Component.text("[" + OmegaPlugin.playerLives.get(target.getName()) + "] " + target.getName()));
+                    }
+                } else {
+                    sender.sendMessage(Component.text("Life count over five not allowed"));
                 }
             } catch(NullPointerException e) {
                 sender.sendMessage("Invalid target");

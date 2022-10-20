@@ -5,13 +5,19 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerCommandSendEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.server.ServerCommandEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -23,6 +29,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
+        registerCommands();
         FileConfiguration config = getConfig();
         Bukkit.getPluginManager().registerEvents(this, this);
         List<String> playerList = (List<String>) config.getList("players");
@@ -70,8 +77,25 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
         updateTablist();
     }
 
+    @EventHandler
+    public void onCommandExecute(ServerCommandEvent e) {
+        if(e.getCommand().contains("omegaset")) {
+            updateTablist();
+            saveLives();
+        }
+    }
+
+    @EventHandler
+    public void onPlayerCommandSend(PlayerCommandPreprocessEvent e) {
+        if(e.getMessage().contains("omegaset")) {
+            updateTablist();
+            saveLives();
+        }
+    }
+
     void registerCommands() {
         getCommand("omegaset").setExecutor(new SetLives());
+        getCommand("deposit").setExecutor(new DepositCommand());
     }
     void updateTablist() {
         for(Player p : getServer().getOnlinePlayers()) {
@@ -83,6 +107,14 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
         playerLives.remove(p, playerLives.get(p));
         playerLives.put(p, newCount);
         saveLives();
+    }
+
+    public static ItemStack getLife(int amount) {
+        ItemStack life = new ItemStack(Material.POPPED_CHORUS_FRUIT, amount);
+        ItemMeta meta = life.getItemMeta();
+        meta.displayName(Component.text("§a§lLife"));
+        life.setItemMeta(meta);
+        return life;
     }
 
     public int getPlayerLifeCount(String p) {

@@ -10,3 +10,7 @@ commands:
     description: Sets a player's lives (OPERATOR-ONLY)
     usage: /<command>
     permission: omegasmp.admin
+
+  deposit:
+    description: Deposits some of your lives in an item form
+    usage: /<command>

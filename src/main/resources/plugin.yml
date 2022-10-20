@@ -1,0 +1,12 @@
+name: OmegaPlugin
+version: '${project.version}'
+main: com.notverygoodatthis.omegaplugin.OmegaPlugin
+api-version: 1.19
+authors: [ NotVeryGoodAtThis ]
+description: The second rewrite of the Omega SMP plugin
+
+commands:
+  omegaset:
+    description: Sets a player's lives (OPERATOR-ONLY)
+    usage: /<command>
+    permission: omegasmp.admin

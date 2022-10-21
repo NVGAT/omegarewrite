@@ -29,6 +29,7 @@ public class SetLives implements CommandExecutor {
             } catch(NumberFormatException e) {
                 sender.sendMessage("Invalid value set for new lives");
             }
+            return true;
         }
         return false;
     }

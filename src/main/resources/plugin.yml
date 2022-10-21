@@ -14,3 +14,7 @@ commands:
   deposit:
     description: Deposits some of your lives in an item form
     usage: /<command>
+
+  omegarevive:
+    description: Revives a dead player
+    usage: /<command>

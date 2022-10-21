@@ -32,6 +32,7 @@ public class DepositCommand implements CommandExecutor {
             } catch (NumberFormatException e) {
                 sender.sendMessage("Invalid life format");
             }
+            return true;
         }
         return false;
     }

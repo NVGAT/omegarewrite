@@ -1,6 +1,7 @@
 package com.notverygoodatthis.omegaplugin;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.BanList;
@@ -11,14 +12,17 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerCommandSendEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +30,7 @@ import java.util.List;
 
 public final class OmegaPlugin extends JavaPlugin implements Listener {
     public static HashMap<String, Integer> playerLives = new HashMap<>();
+    public static final String LIFE_ITEM_NAME = "§a§lLife";
 
     @Override
     public void onEnable() {
@@ -79,17 +84,43 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onCommandExecute(ServerCommandEvent e) {
-        if(e.getCommand().contains("omegaset")) {
-            updateTablist();
-            saveLives();
+        if(e.getCommand().contains("omega") || e.getCommand().contains("deposit")) {
+            Bukkit.getScheduler().runTaskLater(this, new Runnable() {
+                @Override
+                public void run() {
+                    updateTablist();
+                    saveLives();
+                }
+            }, 20L);
+        }
+        }
+
+    @EventHandler
+    public void onPlayerCommandSend(PlayerCommandPreprocessEvent e) {
+        if(e.getMessage().contains("omega") || e.getMessage().contains("deposit")) {
+            Bukkit.getScheduler().runTaskLater(this, new Runnable() {
+                @Override
+                public void run() {
+                    updateTablist();
+                    saveLives();
+                }
+            }, 20L);
         }
     }
 
     @EventHandler
-    public void onPlayerCommandSend(PlayerCommandPreprocessEvent e) {
-        if(e.getMessage().contains("omegaset")) {
-            updateTablist();
-            saveLives();
+    public void onPlayerInteract(PlayerInteractEvent e) {
+        if(e.getPlayer().getInventory().getItemInMainHand().hasItemMeta()) {
+            TextComponent itemInHandName = (TextComponent) e.getPlayer().getInventory().getItemInMainHand().getItemMeta().displayName();
+            if(e.getAction().isRightClick() && e.getPlayer().getInventory().getItemInMainHand().getItemMeta().hasDisplayName()) {
+                assert itemInHandName != null;
+                if(itemInHandName.content().equals(LIFE_ITEM_NAME)) {
+                    e.getPlayer().getInventory().getItemInMainHand().setAmount(e.getPlayer().getInventory().getItemInMainHand().getAmount() - 1);
+                    setPlayerLifeCount(e.getPlayer().getName(), getPlayerLifeCount(e.getPlayer().getName()) + 1);
+                    updateTablist();
+                    saveLives();
+                }
+            }
         }
     }
 
@@ -112,7 +143,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     public static ItemStack getLife(int amount) {
         ItemStack life = new ItemStack(Material.POPPED_CHORUS_FRUIT, amount);
         ItemMeta meta = life.getItemMeta();
-        meta.displayName(Component.text("§a§lLife"));
+        meta.displayName(Component.text(LIFE_ITEM_NAME));
         life.setItemMeta(meta);
         return life;
     }

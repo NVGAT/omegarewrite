@@ -24,6 +24,7 @@ public class DepositCommand implements CommandExecutor {
                     Bukkit.getBanList(BanList.Type.NAME).addBan(target.getName(), "You've deposited all of your lives. Thank you for playing on the Omega SMP.", null, "Omega SMP plugin");
                     target.kick(Component.text("You've deposited all of your lives. Thank you for playing on the Omega SMP."));
                 } else {
+                    Bukkit.getLogger().info(String.valueOf(playerLives - lifeAmount));
                     target.getWorld().dropItemNaturally(target.getLocation(), OmegaPlugin.getLife(lifeAmount));
                     OmegaPlugin.playerLives.remove(target.getName(), OmegaPlugin.playerLives.get(target.getName()));
                     OmegaPlugin.playerLives.put(target.getName(), playerLives - lifeAmount);

@@ -22,12 +22,12 @@ public class SetLives implements CommandExecutor {
                         p.playerListName(Component.text("[" + OmegaPlugin.playerLives.get(target.getName()) + "] " + target.getName()));
                     }
                 } else {
-                    sender.sendMessage(Component.text("Life count over five not allowed"));
+                    sender.sendMessage(Component.text("§b§lLife count over five not allowed"));
                 }
             } catch(NullPointerException e) {
-                sender.sendMessage("Invalid target");
+                sender.sendMessage("§b§lInvalid target");
             } catch(NumberFormatException e) {
-                sender.sendMessage("Invalid value set for new lives");
+                sender.sendMessage("§b§lInvalid value set for new lives");
             }
             return true;
         }

@@ -16,7 +16,7 @@ public class ReviveCommand implements CommandExecutor {
             Player player = (Player) sender;
             if(player.getInventory().getItemInMainHand() == OmegaPlugin.getRevivalHead(player.getInventory().getItemInMainHand().getAmount())) {
                 Bukkit.getBanList(BanList.Type.NAME).pardon(args[0]);
-                player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You have successfully revived " + args[0] + ". Contact the server owner if there was any errors");
+                player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "§b§lYou have successfully revived " + args[0] + "§b§l. Contact the server owner if there was any errors");
                 player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
                 return true;
             }

@@ -18,7 +18,7 @@ public class DepositCommand implements CommandExecutor {
                 int lifeAmount = Integer.parseInt(args[0]);
                 int playerLives = OmegaPlugin.playerLives.get(target.getName());
                 if(lifeAmount > playerLives) {
-                    sender.sendMessage("Can't withdraw more lives than you have");
+                    sender.sendMessage("§b§lCan't withdraw more lives than you have");
                 } else if(lifeAmount == playerLives) {
                     target.getWorld().dropItemNaturally(target.getLocation(), OmegaPlugin.getLife(lifeAmount));
                     Bukkit.getBanList(BanList.Type.NAME).addBan(target.getName(), "You've deposited all of your lives. Thank you for playing on the Omega SMP.", null, "Omega SMP plugin");
@@ -30,7 +30,7 @@ public class DepositCommand implements CommandExecutor {
                     OmegaPlugin.playerLives.put(target.getName(), playerLives - lifeAmount);
                 }
             } catch (NumberFormatException e) {
-                sender.sendMessage("Invalid life format");
+                sender.sendMessage("§b§lInvalid life format");
             }
             return true;
         }

@@ -1,8 +1,6 @@
 package com.notverygoodatthis.omegaplugin;
 
 import dev.dbassett.skullcreator.SkullCreator;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -13,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -61,9 +60,9 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     public void onPlayerJoin(PlayerJoinEvent e) {
         if(!getCurrentPlayerlist().contains(e.getPlayer().getName())) {
             playerLives.put(e.getPlayer().getName(), 5);
-            e.getPlayer().sendMessage(Component.text("§b§l<Omega SMP> Welcome to the " +
+            e.getPlayer().sendMessage("§b§l<Omega SMP> Welcome to the " +
                     "§b§lOmega SMP! You have five lives, each of which you lose when dying to a player. Lose them all and you get banned. " +
-                    "§b§lHave fun!"));
+                    "§b§lHave fun!");
             saveLives();
         }
         updateTablist();
@@ -77,10 +76,10 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
-        if(e.getPlayer().getKiller() != null) {
-            Player player = e.getPlayer();
-            if(getPlayerLifeCount(player.getName()) - 1 != 0) {
-                setPlayerLifeCount(player.getName(), getPlayerLifeCount(player.getName()) - 1);
+        if(e.getEntity().getKiller() != null) {
+            OmegaPlayer player = new OmegaPlayer(e.getEntity());
+            if(player.getOmegaLives() - 1 != 0) {
+                player.setOmegaLives(player.getOmegaLives() - 1);
             } else {
                 Random rand = new Random();
                 ItemStack randItem = new ItemStack(Material.matchMaterial(rewardMats.get(rand.nextInt(rewardMats.size()))));
@@ -126,15 +125,16 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
                         break;
                     case ENCHANTED_GOLDEN_APPLE:
                         ItemMeta meta = randItem.getItemMeta();;
-                        meta.displayName(Component.text("§b§l[ O M E G A   A P P L E ]"));
+                        meta.setDisplayName("§b§l[ O M E G A   A P P L E ]");
                         randItem.setItemMeta(meta);
                         break;
                 }
-                player.getWorld().dropItemNaturally(player.getLocation(), randItem);
-                String banMsg = "You have lost your last life to " + player.getKiller().getName() + ". Thank you for playing on the Omega SMP.";
-                player.getWorld().dropItemNaturally(player.getLocation(), getResurrectionShard(1));
-                Bukkit.getBanList(BanList.Type.NAME).addBan(player.getName(), banMsg, null, "Omega SMP plugin");
-                player.kick(Component.text(banMsg));
+                getLogger().info("Dropped " + randItem.getType().toString() + " at the death of " + player.getPlayerInstance().getName());
+                player.getPlayerInstance().getWorld().dropItemNaturally(player.getPlayerInstance().getLocation(), randItem);
+                String banMsg = "You have lost your last life to " + player.getPlayerInstance().getKiller().getName() + ". Thank you for playing on the Omega SMP.";
+                player.getPlayerInstance().getWorld().dropItemNaturally(player.getPlayerInstance().getLocation(), getResurrectionShard(1));
+                Bukkit.getBanList(BanList.Type.NAME).addBan(player.getPlayerInstance().getName(), banMsg, null, "Omega SMP plugin");
+                player.getPlayerInstance().kickPlayer(banMsg);
             }
         }
         updateTablist();
@@ -142,13 +142,10 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerConsume(PlayerItemConsumeEvent e) {
-        if(e.getItem().getType() == Material.ENCHANTED_GOLDEN_APPLE && e.getItem().hasItemMeta() && e.getItem().getItemMeta().hasDisplayName()) {
-            TextComponent text = (TextComponent) e.getItem().getItemMeta().displayName();
-            if(text.content().equals("§b§l[ O M E G A   A P P L E ]")) {
-                Player player = e.getPlayer();
-                player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 20 * 60, 5));
-                player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 60, 4));
-            }
+        if(e.getItem().getType() == Material.ENCHANTED_GOLDEN_APPLE && e.getItem().hasItemMeta() && e.getItem().getItemMeta().hasDisplayName() && e.getItem().getItemMeta().getDisplayName().equals("§b§l[ O M E G A   A P P L E ]")) {
+            OmegaPlayer player = new OmegaPlayer(e.getPlayer());
+            player.getPlayerInstance().addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 20 * 60, 5));
+            player.getPlayerInstance().addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 60, 3));
         }
     }
 
@@ -181,14 +178,16 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e) {
         if(e.getPlayer().getInventory().getItemInMainHand().hasItemMeta()) {
-            TextComponent itemInHandName = (TextComponent) e.getPlayer().getInventory().getItemInMainHand().getItemMeta().displayName();
-            if(e.getAction().isRightClick() && e.getPlayer().getInventory().getItemInMainHand().getItemMeta().hasDisplayName()) {
-                assert itemInHandName != null;
-                if(itemInHandName.content().equals(LIFE_ITEM_NAME)) {
-                    e.getPlayer().getInventory().getItemInMainHand().setAmount(e.getPlayer().getInventory().getItemInMainHand().getAmount() - 1);
-                    setPlayerLifeCount(e.getPlayer().getName(), getPlayerLifeCount(e.getPlayer().getName()) + 1);
-                    updateTablist();
-                    saveLives();
+            if(e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+                if(e.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName().equals(LIFE_ITEM_NAME) && e.getPlayer().getInventory().getItemInMainHand().getItemMeta().hasDisplayName()) {
+                    OmegaPlayer player = new OmegaPlayer(e.getPlayer());
+                    player.setOmegaLives(player.getOmegaLives() + 1);
+                    player.updateTablist();
+                    if(player.setOmegaLives(player.getOmegaLives() + 1) == OmegaPlayer.LifeOutcome.SUCCESS) {
+                        player.getPlayerInstance().getInventory().getItemInMainHand().setAmount(player.getPlayerInstance().getInventory().getItemInMainHand().getAmount() - 1);
+                    } else {
+
+                    }
                 }
             }
         }
@@ -198,6 +197,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
         getCommand("omegaset").setExecutor(new SetLives());
         getCommand("deposit").setExecutor(new DepositCommand());
         getCommand("omegarevive").setExecutor(new ReviveCommand());
+        getCommand("omegaitem").setExecutor(new OPItemCommand());
     }
 
     void registerRecipes() {
@@ -205,20 +205,15 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     }
     void updateTablist() {
         for(Player p : getServer().getOnlinePlayers()) {
-            p.playerListName(Component.text("[" + getPlayerLifeCount(p.getName()) + "] " + p.getName()));
+            OmegaPlayer player = new OmegaPlayer(p);
+            player.getPlayerInstance().setPlayerListName("[" + player.getOmegaLives() + "] " + p.getName());
         }
-    }
-
-    public void setPlayerLifeCount(String p, int newCount) {
-        playerLives.remove(p, playerLives.get(p));
-        playerLives.put(p, newCount);
-        saveLives();
     }
 
     public static ItemStack getLife(int amount) {
         ItemStack life = new ItemStack(Material.POPPED_CHORUS_FRUIT, amount);
         ItemMeta meta = life.getItemMeta();
-        meta.displayName(Component.text(LIFE_ITEM_NAME));
+        meta.setDisplayName(LIFE_ITEM_NAME);
         life.setItemMeta(meta);
         return life;
     }
@@ -226,7 +221,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     public static ItemStack getRevivalHead(int amount) {
         ItemStack skull = SkullCreator.itemFromBase64("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTQ2MDdhZThhNmY5Mzc0MmU4ZWIxNmEwZjg2MjY1OWUzMDg3NjEwMTlhMzk3NzIyYzFhZmU4NGIxNzlkMWZhMiJ9fX0=");
         ItemMeta meta = skull.getItemMeta();
-        meta.displayName(Component.text(REVIVAL_ITEM_NAME));
+        meta.setDisplayName(REVIVAL_ITEM_NAME);
         skull.setItemMeta(meta);
         skull.setAmount(amount);
         return skull;
@@ -235,13 +230,9 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     public static ItemStack getResurrectionShard(int amount) {
         ItemStack shard = new ItemStack(Material.COCOA_BEANS, amount);
         ItemMeta meta = shard.getItemMeta();
-        meta.displayName(Component.text(RESURRECTION_SHARD_NAME));
+        meta.setDisplayName(RESURRECTION_SHARD_NAME);
         shard.setItemMeta(meta);
         return shard;
-    }
-
-    public int getPlayerLifeCount(String p) {
-        return playerLives.get(p);
     }
 
     List<Integer> getCurrentLifeList() {

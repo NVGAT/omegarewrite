@@ -3,18 +3,20 @@ version: '${project.version}'
 main: com.notverygoodatthis.omegaplugin.OmegaPlugin
 api-version: 1.19
 authors: [ NotVeryGoodAtThis ]
-description: The second rewrite of the Omega SMP plugin
+description: The Minecraft Spigot server plugin for the Omega SMP
 
 commands:
   omegaset:
-    description: Sets a player's lives (OPERATOR-ONLY)
+    description: Set a player's lives (ADMIN ONLY)
     usage: /<command>
     permission: omegasmp.admin
-
   deposit:
-    description: Deposits some of your lives in an item form
+    description: Deposit some of your lives in an item form
     usage: /<command>
-
   omegarevive:
-    description: Revives a dead player
+    description: Revive a banned player
     usage: /<command>
+  omegaitem:
+    description: Get an Omega SMP OP item (ADMIN ONLY)
+    usage: /<command>
+    permission: omegasmp.admin

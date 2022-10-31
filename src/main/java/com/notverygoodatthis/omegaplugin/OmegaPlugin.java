@@ -143,9 +143,21 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerConsume(PlayerItemConsumeEvent e) {
         if(e.getItem().getType() == Material.ENCHANTED_GOLDEN_APPLE && e.getItem().hasItemMeta() && e.getItem().getItemMeta().hasDisplayName() && e.getItem().getItemMeta().getDisplayName().equals("§b§l[ O M E G A   A P P L E ]")) {
-            OmegaPlayer player = new OmegaPlayer(e.getPlayer());
-            player.getPlayerInstance().addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 20 * 60, 5));
-            player.getPlayerInstance().addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 60, 3));
+            if(!omegaGappledPlayers.contains(e.getPlayer())) {
+                OmegaPlayer player = new OmegaPlayer(e.getPlayer());
+                player.getPlayerInstance().addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 20 * 60, 5));
+                player.getPlayerInstance().addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 60, 3));
+                omegaGappledPlayers.add(player.getPlayerInstance());
+                Bukkit.getScheduler().runTaskLater(this, new Runnable() {
+                    @Override
+                    public void run() {
+                        omegaGappledPlayers.remove(player.getPlayerInstance());
+                    }
+                }, 20L * 300);
+                player.getPlayerInstance().sendMessage("<Omega SMP> You've been buffed from eating an Omega apple, you're now on cooldown for five more minutes.");
+            } else {
+                e.getPlayer().sendMessage("<Omega SMP> Your Omega apple cooldown is still active. default god apple effects applied");
+            }
         }
     }
 
@@ -181,12 +193,12 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
             if(e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
                 if(e.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName().equals(LIFE_ITEM_NAME) && e.getPlayer().getInventory().getItemInMainHand().getItemMeta().hasDisplayName()) {
                     OmegaPlayer player = new OmegaPlayer(e.getPlayer());
-                    player.setOmegaLives(player.getOmegaLives() + 1);
-                    player.updateTablist();
                     if(player.setOmegaLives(player.getOmegaLives() + 1) == OmegaPlayer.LifeOutcome.SUCCESS) {
                         player.getPlayerInstance().getInventory().getItemInMainHand().setAmount(player.getPlayerInstance().getInventory().getItemInMainHand().getAmount() - 1);
+                        player.updateTablist();
                     } else {
-
+                        player.getPlayerInstance().sendMessage("<Omega SMP> You've reached the maximum life count of five lives already");
+                        player.updateTablist();
                     }
                 }
             }
@@ -258,5 +270,11 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
         rec.setIngredient('T', Material.TOTEM_OF_UNDYING);
         rec.setIngredient('S', new RecipeChoice.ExactChoice(getResurrectionShard(1)));
         return rec;
+    }
+
+    @Override
+    public void onDisable() {
+        saveLives();
+        saveConfig();
     }
 }

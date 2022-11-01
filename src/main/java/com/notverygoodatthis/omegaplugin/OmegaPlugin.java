@@ -41,23 +41,26 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
         //On enabling the plugin we do most of the basic stuff
         registerCommands();
         registerRecipes();
-        //Such as cmd
+        //Such as reading from the configs and loading all of the players and their lives into their respected lists
         FileConfiguration config = getConfig();
         Bukkit.getPluginManager().registerEvents(this, this);
         List<String> playerList = (List<String>) config.getList("players");
         List<Integer> lifeList = (List<Integer>) config.getList("lives");
         rewardMats = (List<String>) config.getList("reward-mats");
 
+        //Then we neatly structure the players and their lives in a hashmap, making every player's statistics easily accessible
         if(playerList != null) {
             for(String p: playerList) {
                 playerLives.put(p, lifeList.get(playerList.indexOf(p)));
+                //While structuring we print out all of the player's lives to the console for debugging purposes
                 printPlayerLives();
             }
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
+        //If the server config does not contain the name of a player that joined (they've never played before) they are greeted with an explanation of the SMP
         if(!getCurrentPlayerlist().contains(e.getPlayer().getName())) {
             playerLives.put(e.getPlayer().getName(), 5);
             e.getPlayer().sendMessage("§b§l<Omega SMP> Welcome to the " +
@@ -65,9 +68,11 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
                     "§b§lHave fun!");
             saveLives();
         }
+        //We then update the tab list to ensure correct display of each player's lives
         updateTablist();
     }
 
+    //A function to save all of the lives into the config
     void saveLives() {
         getConfig().set("players", getCurrentPlayerlist());
         getConfig().set("lives", getCurrentLifeList());
@@ -76,13 +81,18 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
+        //The core logic of the plugin, implementing the core feature of it: the five lives system
         if(e.getEntity().getKiller() != null) {
+            //First we wrap the player object in our custom OmegaPlayer wrapper
             OmegaPlayer player = new OmegaPlayer(e.getEntity());
+            //If the player hasn't lost all of their lives we just simply decrease their life count
             if(player.getOmegaLives() - 1 != 0) {
                 player.setOmegaLives(player.getOmegaLives() - 1);
             } else {
+                //On the other hand, if they did we pick a random item material from the list we loaded from the config
                 Random rand = new Random();
                 ItemStack randItem = new ItemStack(Material.matchMaterial(rewardMats.get(rand.nextInt(rewardMats.size()))));
+                //We apply each item's respected properties, such as names, enchantments etc.
                 switch (randItem.getType()) {
                     case NETHERITE_CHESTPLATE:
                         randItem.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 6);
@@ -129,14 +139,20 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
                         randItem.setItemMeta(meta);
                         break;
                 }
+                //Then we log the item dropped at the ban event of the player
                 getLogger().info("Dropped " + randItem.getType().toString() + " at the death of " + player.getPlayerInstance().getName());
+                //After that we actually drop the item
                 player.getPlayerInstance().getWorld().dropItemNaturally(player.getPlayerInstance().getLocation(), randItem);
+                //Generate the ban message
                 String banMsg = "You have lost your last life to " + player.getPlayerInstance().getKiller().getName() + ". Thank you for playing on the Omega SMP.";
+                //Drop a resurrection shard at the player's death location
                 player.getPlayerInstance().getWorld().dropItemNaturally(player.getPlayerInstance().getLocation(), getResurrectionShard(1));
+                //We ban the player, ensuring they won't connect again
                 Bukkit.getBanList(BanList.Type.NAME).addBan(player.getPlayerInstance().getName(), banMsg, null, "Omega SMP plugin");
                 player.getPlayerInstance().kickPlayer(banMsg);
             }
         }
+        //And finally we update the tab list
         updateTablist();
     }
 

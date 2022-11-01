@@ -13,10 +13,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
@@ -31,6 +28,7 @@ import java.util.*;
 import java.util.List;
 
 public final class OmegaPlugin extends JavaPlugin implements Listener {
+    //Public variables defined for use everywhere
     public static HashMap<String, Integer> playerLives = new HashMap<>();
     public static List<String> rewardMats = new ArrayList<>();
     public static List<Player> omegaGappledPlayers = new ArrayList<>();
@@ -40,8 +38,10 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
+        //On enabling the plugin we do most of the basic stuff
         registerCommands();
         registerRecipes();
+        //Such as cmd
         FileConfiguration config = getConfig();
         Bukkit.getPluginManager().registerEvents(this, this);
         List<String> playerList = (List<String>) config.getList("players");
@@ -172,7 +172,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
                 }
             }, 20L);
         }
-        }
+    }
 
     @EventHandler
     public void onPlayerCommandSend(PlayerCommandPreprocessEvent e) {

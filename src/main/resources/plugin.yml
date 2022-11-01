@@ -20,3 +20,6 @@ commands:
     description: Get an Omega SMP OP item (ADMIN ONLY)
     usage: /<command>
     permission: omegasmp.admin
+  afk:
+    description: Toggles your AFK status
+    usage: /<command>

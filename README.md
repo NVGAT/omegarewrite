@@ -27,16 +27,18 @@ To use this plugin, you need to comply with the Creative Commons BY-NC-SA 4.0 li
 ---
     
 Great! Now that you've definitely read the important note, let's proceed. The first step should be to install your desired server software. For me that's going to be 1.19.2. We download the server.jar from [PaperMC's official website](https://papermc.io/downloads), run it with Java 17, agree to the EULA and restart the server. Once the server is up, we drop the plugin jar file into the plugins directory and enter the ```reload confirm``` command into the server console and then ```stop```.\
- Now we should edit the config files. There's a necessary list not provided in the config file for the sake of customizability, but the default should be along the lines of:
+ Now we should edit the config files. This is the config that is used in the Omega SMP:
 ```
 reward-mats:
-- NETHERITE_CHESTPLATE
-- NETHERITE_LEGGINGS
-- NETHERITE_HELMET
-- NETHERITE_BOOTS
-- NETHERITE_SWORD
-- NETHERITE_AXE
-- ENCHANTED_GOLDEN_APPLE
+  - NETHERITE_CHESTPLATE
+  - NETHERITE_LEGGINGS
+  - NETHERITE_HELMET
+  - NETHERITE_BOOTS
+  - NETHERITE_SWORD
+  - NETHERITE_AXE
+  - ENCHANTED_GOLDEN_APPLE
+spawn-cords: [0.0, 76.0, -10.0]
+punish-on-spawn-kill: true
 ```
 After all of this, you can finally start the server and enjoy the plugin. Make sure to leave me a note if something's wrong.
 

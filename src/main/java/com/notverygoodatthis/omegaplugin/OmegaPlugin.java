@@ -1,10 +1,8 @@
 package com.notverygoodatthis.omegaplugin;
 
 import dev.dbassett.skullcreator.SkullCreator;
-import org.bukkit.BanList;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
+import me.NoChance.PvPManager.PvPlayer;
+import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -12,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.server.ServerCommandEvent;
@@ -35,6 +34,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     public static final String LIFE_ITEM_NAME = "§a§lLife";
     public static final String REVIVAL_ITEM_NAME = "§4§oRevive item";
     public static final String RESURRECTION_SHARD_NAME = "§b§lRessurection fragment";
+    public static Location spawnLocation;
 
     @Override
     public void onEnable() {
@@ -52,10 +52,21 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
         if(playerList != null) {
             for(String p: playerList) {
                 playerLives.put(p, lifeList.get(playerList.indexOf(p)));
-                //While structuring we print out all of the player's lives to the console for debugging purposes
-                printPlayerLives();
+                if(!Bukkit.getOfflinePlayer(p).isBanned()) {
+                    getLogger().info(p + " has " + playerLives.get(p) + " lives.");
+                } else {
+                    getLogger().info(p + " has lost all of their lives and are banned");
+                }
             }
         }
+
+        List<Double> spawnCords = (List<Double>) getConfig().getList("spawn-cords");
+        getServer().getScheduler().runTaskLater(this, new Runnable() {
+            @Override
+            public void run() {
+                spawnLocation = new Location(Bukkit.getWorld("world"), spawnCords.get(0), spawnCords.get(1), spawnCords.get(2));
+            }
+        }, 20L);
     }
 
     @EventHandler
@@ -148,12 +159,23 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
                 //Drop a resurrection shard at the player's death location
                 player.getPlayerInstance().getWorld().dropItemNaturally(player.getPlayerInstance().getLocation(), getResurrectionShard(1));
                 //We ban the player, ensuring they won't connect again
+                PvPlayer playerPVP = (PvPlayer) e.getEntity();
+                playerPVP.setPvP(false);
                 Bukkit.getBanList(BanList.Type.NAME).addBan(player.getPlayerInstance().getName(), banMsg, null, "Omega SMP plugin");
                 player.getPlayerInstance().kickPlayer(banMsg);
             }
         }
+
         //And finally we update the tab list
         updateTablist();
+
+        boolean banEnabled = getConfig().getBoolean("punish-on-spawn-kill");
+        if(spawnLocation.distance(e.getEntity().getKiller().getLocation()) < 50 && banEnabled) {
+            PvPlayer killer = (PvPlayer) e.getEntity().getKiller();
+            killer.setPvP(false);
+            String banMSG = "You've been banned due to killing " + e.getEntity().getName() + " at spawn. Contact the server admin to discuss the length of your punishment, otherwise this ban will last forever.";
+            Bukkit.getBanList(BanList.Type.NAME).addBan(killer.getName(), banMSG, null, "Omega SMP plugin");
+        }
     }
 
     @EventHandler
@@ -174,6 +196,13 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
             } else {
                 e.getPlayer().sendMessage("<Omega SMP> Your Omega apple cooldown is still active. default god apple effects applied");
             }
+        }
+    }
+
+    @EventHandler
+    public void onEntityDeath(EntityDeathEvent e) {
+        if(e.getDrops().contains(Material.GUNPOWDER)) {
+            e.getEntity().getWorld().dropItemNaturally(e.getEntity().getLocation(), new ItemStack(Material.GUNPOWDER, 5));
         }
     }
 
@@ -226,6 +255,8 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
         getCommand("deposit").setExecutor(new DepositCommand());
         getCommand("omegarevive").setExecutor(new ReviveCommand());
         getCommand("omegaitem").setExecutor(new OPItemCommand());
+        getCommand("spawncheck").setExecutor(new SpawnCheck());
+        getCommand("spawnset").setExecutor(new SpawnSet());
     }
 
     void registerRecipes() {
@@ -269,12 +300,6 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
 
     List<String> getCurrentPlayerlist() {
         return new ArrayList<>(playerLives.keySet());
-    }
-
-    void printPlayerLives() {
-        for (String p : playerLives.keySet()) {
-            getLogger().info(p + " has " + playerLives.get(p) + " lives.");
-        }
     }
 
     public ShapedRecipe revivalRecipe() {

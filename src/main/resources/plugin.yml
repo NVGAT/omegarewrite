@@ -23,3 +23,9 @@ commands:
   afk:
     description: Toggles your AFK status
     usage: /<command>
+  spawncheck:
+    description: Check if the player is standing in spawn.
+    usage: /<command>
+  spawnset:
+    description: Sets the spawn area counted for the kill ban
+    usage: /<command>

@@ -1,0 +1,14 @@
+players:
+  - RedThunder7361
+lives:
+  - 4
+reward-mats:
+  - NETHERITE_CHESTPLATE
+  - NETHERITE_LEGGINGS
+  - NETHERITE_HELMET
+  - NETHERITE_BOOTS
+  - NETHERITE_SWORD
+  - NETHERITE_AXE
+  - ENCHANTED_GOLDEN_APPLE
+spawn-cords: [0.0, 76.0, -10.0]
+punish-on-spawn-kill: true

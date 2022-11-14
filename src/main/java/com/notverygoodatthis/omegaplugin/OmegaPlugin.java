@@ -7,7 +7,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -21,7 +20,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.w3c.dom.Text;
 
 import java.util.*;
 import java.util.List;
@@ -171,8 +169,10 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
 
         boolean banEnabled = getConfig().getBoolean("punish-on-spawn-kill");
         if(spawnLocation.distance(e.getEntity().getKiller().getLocation()) < 50 && banEnabled) {
+            //Logic for the automatic spawn-killer-ban system, first we use the PVPManager API to get the killer out of PVP
             PvPlayer killer = (PvPlayer) e.getEntity().getKiller();
             killer.setPvP(false);
+            //Then we ban the killer, simple as that!
             String banMSG = "You've been banned due to killing " + e.getEntity().getName() + " at spawn. Contact the server admin to discuss the length of your punishment, otherwise this ban will last forever.";
             Bukkit.getBanList(BanList.Type.NAME).addBan(killer.getName(), banMSG, null, "Omega SMP plugin");
         }

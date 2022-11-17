@@ -26,7 +26,7 @@ To use this plugin, you need to comply with the Creative Commons BY-NC-SA 4.0 li
 ### It has ONLY been tested on Spigot 1.19.2 and PaperMC 1.19.2.
 ---
     
-Great! Now that you've definitely read the important note, let's proceed. The first step should be to install your desired server software. For me that's going to be 1.19.2. We download the server.jar from [PaperMC's official website](https://papermc.io/downloads), run it with Java 17, agree to the EULA and restart the server. Once the server is up, we drop the plugin jar file into the plugins directory and enter the ```reload confirm``` command into the server console and then ```stop```.\
+Great! Now that you've definitely read the important note, let's proceed. The first step should be to install your desired server software. For me that's going to be 1.19.2. We download the server.jar from [PaperMC's official website](https://papermc.io/downloads), run it with Java 17, agree to the EULA and restart the server. Once the server is up, we drop the plugin jar file into the plugins directory and enter the ```reload confirm``` command into the server console and then ```stop```.
 ### Important: If you're going to be using an anti combat-logging plugin, I highly recommend PVPManager because the Omega SMP plugin can work with it. If you use any other ant combat-log plugins, you will probably face issues when players get banned. You have been warned.
  Now we should edit the config files. This is the config that is used in the Omega SMP:
 ```

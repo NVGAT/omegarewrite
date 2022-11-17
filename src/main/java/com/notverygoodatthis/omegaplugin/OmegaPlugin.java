@@ -65,6 +65,19 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
                 spawnLocation = new Location(Bukkit.getWorld("world"), spawnCords.get(0), spawnCords.get(1), spawnCords.get(2));
             }
         }, 20L);
+
+        getLogger().info("The plugin will check if PVPManager is installed in thirty seconds. PVPManager isn't necessary, but it's the best option for use with this plugin.");
+
+        getServer().getScheduler().runTaskLater(this, new Runnable() {
+            @Override
+            public void run() {
+                if(Bukkit.getPluginManager().getPlugin("PVPManager") != null) {
+                    getLogger().info("PVPManager has been detected. The plugin will attempt to work with PVPManager to get players out of combat when they get banned.");
+                } else {
+                    getLogger().info("PVPManager has not been detected. If you don't want to use PVP-log plugins you can ignore this message.");
+                }
+            }
+        }, 20L * 30);
     }
 
     @EventHandler

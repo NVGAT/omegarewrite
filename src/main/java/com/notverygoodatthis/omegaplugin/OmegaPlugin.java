@@ -156,9 +156,12 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
                 String banMsg = "You have lost your last life to " + player.getPlayerInstance().getKiller().getName() + ". Thank you for playing on the Omega SMP.";
                 //Drop a resurrection shard at the player's death location
                 player.getPlayerInstance().getWorld().dropItemNaturally(player.getPlayerInstance().getLocation(), getResurrectionShard(1));
+                if(Bukkit.getPluginManager().getPlugin("PVPManager") != null) {
+                    PvPlayer pvPlayer = PvPlayer.get(e.getEntity());
+                    pvPlayer.setPvP(false);
+                    getLogger().info("Got " + pvPlayer.getName() + " out of combat for the purpose of banning them. This is intentional behavior.");
+                }
                 //We ban the player, ensuring they won't connect again
-                PvPlayer playerPVP = (PvPlayer) e.getEntity();
-                playerPVP.setPvP(false);
                 Bukkit.getBanList(BanList.Type.NAME).addBan(player.getPlayerInstance().getName(), banMsg, null, "Omega SMP plugin");
                 player.getPlayerInstance().kickPlayer(banMsg);
             }

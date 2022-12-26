@@ -76,9 +76,14 @@ public class OPItemCommand implements CommandExecutor {
                         meta.setDisplayName("§b§l[ O M E G A   A P P L E ]");
                         item.setItemMeta(meta);
                         break;
+                    //Resurrection shard
+                    case "shard":
+                        item = OmegaPlugin.getResurrectionShard(1);
+                        break;
                 }
                 //Drops the item at the command sender's location
                 player.getWorld().dropItemNaturally(player.getLocation(), item);
+                return true;
             }
         }
         return false;

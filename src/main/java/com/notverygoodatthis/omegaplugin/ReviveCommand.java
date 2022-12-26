@@ -28,7 +28,7 @@ public class ReviveCommand implements CommandExecutor {
                     //We (obviously) take away one revival item because they've just used it
                     player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
                     //Then we store the targeted player in an OmegaPlayer
-                    OmegaPlayer omegaPlayer = new OmegaPlayer((Player) bannedPlayer);
+                    OmegaPlayer omegaPlayer = new OmegaPlayer(bannedPlayer.getPlayer());
                     //And we set their life count to five.
                     omegaPlayer.setOmegaLives(5);
                     return true;

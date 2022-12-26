@@ -21,6 +21,7 @@ public class SpawnSet implements CommandExecutor {
             Bukkit.getPluginManager().getPlugin("OmegaPlugin").saveConfig();
             //We notify the command sender that they've successfully set the spawn location.
             sender.sendMessage(MessageFormat.format("<Omega SMP> Successful! Your spawn coordinates are now {0} {1} {2}", cordsList.get(0), cordsList.get(1), cordsList.get(2)));
+            return true;
         } catch(NumberFormatException e) {
             //If they've defined the numbers wrong we notify them about it.
             sender.sendMessage("<Omega SMP> Invalid number format");

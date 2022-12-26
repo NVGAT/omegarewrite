@@ -18,9 +18,11 @@ public class SpawnCheck implements CommandExecutor {
                 if(player.getLocation().distance(OmegaPlugin.spawnLocation) < 50) {
                     //Then we tell the player that they are in spawn and that if they kill here they will be banned.
                     player.sendMessage("<Omega SMP> You're in range of spawn. If you kill here you will automatically be banned.");
+                    return true;
                 } else {
                     //If the player isn't within fifty blocks of spawn, we notify them that they can kill here without any consequences.
                     player.sendMessage("<Omega SMP> You're not in range of spawn. You can kill without any consequences.");
+                    return true;
                 }
             } else {
                 //If the player isn't in the overworld we notify them that they can kill anywhere in this dimension.

@@ -20,12 +20,9 @@ commands:
     description: Get an Omega SMP OP item (ADMIN ONLY)
     usage: /<command>
     permission: omegasmp.admin
-  afk:
-    description: Toggles your AFK status
-    usage: /<command>
   spawncheck:
     description: Check if the player is standing in spawn.
     usage: /<command>
   spawnset:
-    description: Sets the spawn area counted for the kill ban
+    description: Sets the spawn area counted for the kill ban (ADMIN ONLY)
     usage: /<command>

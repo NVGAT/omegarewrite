@@ -22,6 +22,7 @@ public class SetLives implements CommandExecutor {
                     //We set the target's lives and update the tablist
                     target.setOmegaLives(newLives);
                     target.updateTablist();
+                    return true;
                 } else {
                     //And if it's not we notify the command sender about it
                     sender.sendMessage("§b§lLife count over five not allowed");

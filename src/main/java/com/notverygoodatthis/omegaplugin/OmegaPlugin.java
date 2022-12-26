@@ -1,6 +1,7 @@
 package com.notverygoodatthis.omegaplugin;
 
 import dev.dbassett.skullcreator.SkullCreator;
+import me.NoChance.PvPManager.PvPManager;
 import me.NoChance.PvPManager.PvPlayer;
 import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -16,11 +17,13 @@ import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.meta.CompassMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import javax.naming.Name;
 import java.util.*;
 import java.util.List;
 
@@ -33,6 +36,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     public static final String REVIVAL_ITEM_NAME = "§4§oRevive item";
     public static final String RESURRECTION_SHARD_NAME = "§b§lRessurection fragment";
     public static Location spawnLocation;
+    PvPManager pvpManager;
 
     @Override
     public void onEnable() {
@@ -71,7 +75,8 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
         getServer().getScheduler().runTaskLater(this, new Runnable() {
             @Override
             public void run() {
-                if(Bukkit.getPluginManager().getPlugin("PVPManager") != null) {
+                if(Bukkit.getPluginManager().isPluginEnabled("PVPManager")) {
+                    pvpManager = (PvPManager) Bukkit.getPluginManager().getPlugin("PVPManager");
                     getLogger().info("PVPManager has been detected. The plugin will attempt to work with PVPManager to get players out of combat when they get banned.");
                 } else {
                     getLogger().info("PVPManager has not been detected. If you don't want to use PVP-log plugins you can ignore this message.");
@@ -170,7 +175,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
                 //Drop a resurrection shard at the player's death location
                 player.getPlayerInstance().getWorld().dropItemNaturally(player.getPlayerInstance().getLocation(), getResurrectionShard(1));
                 if(Bukkit.getPluginManager().getPlugin("PVPManager") != null) {
-                    PvPlayer pvPlayer = PvPlayer.get(e.getEntity());
+                    PvPlayer pvPlayer = pvpManager.getPlayerHandler().get(player.getPlayerInstance());
                     pvPlayer.setPvP(false);
                     getLogger().info("Got " + pvPlayer.getName() + " out of combat for the purpose of banning them. This is intentional behavior.");
                 }
@@ -183,25 +188,34 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
         //And finally we update the tab list
         updateTablist();
 
+        //Logic for the automatic spawn-killer-ban system, first we check if we should be banning them at all by checking the punish-on-spawn-kill boolean that's stored in the config
         boolean banEnabled = getConfig().getBoolean("punish-on-spawn-kill");
-        if(spawnLocation.distance(e.getEntity().getKiller().getLocation()) < 50 && banEnabled) {
-            //Logic for the automatic spawn-killer-ban system, first we use the PVPManager API to get the killer out of PVP
-            PvPlayer killer = (PvPlayer) e.getEntity().getKiller();
-            killer.setPvP(false);
-            //Then we ban the killer, simple as that!
-            String banMSG = "You've been banned due to killing " + e.getEntity().getName() + " at spawn. Contact the server admin to discuss the length of your punishment, otherwise this ban will last forever.";
-            Bukkit.getBanList(BanList.Type.NAME).addBan(killer.getName(), banMSG, null, "Omega SMP plugin");
+        if(e.getEntity().getKiller() instanceof Player && banEnabled) {
+            if(spawnLocation.distance(e.getEntity().getKiller().getLocation()) < 50) {
+                //Then we use the PVPManager API to get the killer in a PvPlayer object
+                PvPlayer killer = pvpManager.getPlayerHandler().get(e.getEntity().getKiller());
+                //We get the killer out of PVP so that they don't drop all of their stuff on the ground
+                killer.setPvP(false);
+                //Then we ban the killer, simple as that!
+                String banMSG = "You've been banned due to killing " + e.getEntity().getName() + " at spawn. Contact the server admin to discuss the length of your punishment, otherwise this ban will last forever.";
+                Bukkit.getBanList(BanList.Type.NAME).addBan(killer.getName(), banMSG, null, "Omega SMP plugin");
+            }
         }
     }
 
     @EventHandler
     public void onPlayerConsume(PlayerItemConsumeEvent e) {
+        //This is the logic for the omega apples
         if(e.getItem().getType() == Material.ENCHANTED_GOLDEN_APPLE && e.getItem().hasItemMeta() && e.getItem().getItemMeta().hasDisplayName() && e.getItem().getItemMeta().getDisplayName().equals("§b§l[ O M E G A   A P P L E ]")) {
+            //If the player consumed an omega apple, and they're not in the list...
             if(!omegaGappledPlayers.contains(e.getPlayer())) {
+                //We initialize a new OmegaPlayer object with the player in the constructor
                 OmegaPlayer player = new OmegaPlayer(e.getPlayer());
+                //We add all the omega potion effects and add them to the omega apple list
                 player.getPlayerInstance().addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 20 * 60, 5));
                 player.getPlayerInstance().addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 60, 3));
                 omegaGappledPlayers.add(player.getPlayerInstance());
+                //Then we schedule a task to run in five minutes, this acts as a cooldown
                 Bukkit.getScheduler().runTaskLater(this, new Runnable() {
                     @Override
                     public void run() {
@@ -210,13 +224,16 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
                 }, 20L * 300);
                 player.getPlayerInstance().sendMessage("<Omega SMP> You've been buffed from eating an Omega apple, you're now on cooldown for five more minutes.");
             } else {
+                //If they are already on the omega apple list we just send them a message and cancel the event
                 e.getPlayer().sendMessage("<Omega SMP> Your Omega apple cooldown is still active. default god apple effects applied");
+                e.setCancelled(true);
             }
         }
     }
 
     @EventHandler
     public void onEntityDeath(EntityDeathEvent e) {
+        //Logic for the buffed creeper drop rates, you can remove this if you want to
         if(e.getDrops().contains(Material.GUNPOWDER)) {
             e.getEntity().getWorld().dropItemNaturally(e.getEntity().getLocation(), new ItemStack(Material.GUNPOWDER, 5));
         }
@@ -225,6 +242,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     @EventHandler
     public void onCommandExecute(ServerCommandEvent e) {
         if(e.getCommand().contains("omega") || e.getCommand().contains("deposit")) {
+            //If a command contains the keywords "omega" or "deposit" we update the tablist and save the life values. This is only for the console.
             Bukkit.getScheduler().runTaskLater(this, new Runnable() {
                 @Override
                 public void run() {
@@ -237,6 +255,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerCommandSend(PlayerCommandPreprocessEvent e) {
+        //Same thing as the ServerCommandEvent, except this time for players.
         if(e.getMessage().contains("omega") || e.getMessage().contains("deposit")) {
             Bukkit.getScheduler().runTaskLater(this, new Runnable() {
                 @Override
@@ -250,14 +269,22 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e) {
+        //If the item in the player's inventory contains an ItemMeta...
         if(e.getPlayer().getInventory().getItemInMainHand().hasItemMeta()) {
+            //And they've right-clicked something...
             if(e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+                //And if the item is a life item...
                 if(e.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName().equals(LIFE_ITEM_NAME) && e.getPlayer().getInventory().getItemInMainHand().getItemMeta().hasDisplayName()) {
+                    //Then we initialize an OmegaPlayer object with the subject player in the constructor
                     OmegaPlayer player = new OmegaPlayer(e.getPlayer());
+                    //We try to increment their lives, and if it's successful...
                     if(player.setOmegaLives(player.getOmegaLives() + 1) == OmegaPlayer.LifeOutcome.SUCCESS) {
+                        //We take one life item away and update the tablist
                         player.getPlayerInstance().getInventory().getItemInMainHand().setAmount(player.getPlayerInstance().getInventory().getItemInMainHand().getAmount() - 1);
                         player.updateTablist();
                     } else {
+                        //If the outcome is not successful, we don't take away anything and the life count stays the same. This indicates that the player
+                        //is already at the maximum amount of lives. We send them a message and update the tablist.
                         player.getPlayerInstance().sendMessage("<Omega SMP> You've reached the maximum life count of five lives already");
                         player.updateTablist();
                     }
@@ -267,6 +294,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     }
 
     void registerCommands() {
+        //Registering all the commands in the plugin
         getCommand("omegaset").setExecutor(new SetLives());
         getCommand("deposit").setExecutor(new DepositCommand());
         getCommand("omegarevive").setExecutor(new ReviveCommand());
@@ -276,16 +304,21 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     }
 
     void registerRecipes() {
+        //Registering the recipes
         Bukkit.addRecipe(revivalRecipe());
     }
     void updateTablist() {
+        //Tablist update logic
         for(Player p : getServer().getOnlinePlayers()) {
+            //We make an OmegaPlayer object for every player in the server, adding them in the constructor
             OmegaPlayer player = new OmegaPlayer(p);
+            //Then we set their name in the tablist accordingly
             player.getPlayerInstance().setPlayerListName("[" + player.getOmegaLives() + "] " + p.getName());
         }
     }
 
     public static ItemStack getLife(int amount) {
+        //Getter for the life item, important for efficiency
         ItemStack life = new ItemStack(Material.POPPED_CHORUS_FRUIT, amount);
         ItemMeta meta = life.getItemMeta();
         meta.setDisplayName(LIFE_ITEM_NAME);
@@ -294,6 +327,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     }
 
     public static ItemStack getRevivalHead(int amount) {
+        //Getter for the revival item
         ItemStack skull = SkullCreator.itemFromBase64("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTQ2MDdhZThhNmY5Mzc0MmU4ZWIxNmEwZjg2MjY1OWUzMDg3NjEwMTlhMzk3NzIyYzFhZmU4NGIxNzlkMWZhMiJ9fX0=");
         ItemMeta meta = skull.getItemMeta();
         meta.setDisplayName(REVIVAL_ITEM_NAME);
@@ -303,6 +337,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     }
 
     public static ItemStack getResurrectionShard(int amount) {
+        //Getter for the ressurection shard
         ItemStack shard = new ItemStack(Material.COCOA_BEANS, amount);
         ItemMeta meta = shard.getItemMeta();
         meta.setDisplayName(RESURRECTION_SHARD_NAME);
@@ -311,14 +346,17 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
     }
 
     List<Integer> getCurrentLifeList() {
+        //Gets the current life list from the config
         return new ArrayList<>(playerLives.values());
     }
 
     List<String> getCurrentPlayerlist() {
+        //Gets the current player list from the config
         return new ArrayList<>(playerLives.keySet());
     }
 
     public ShapedRecipe revivalRecipe() {
+        //Revival item recipe
         ItemStack revivalItem = getRevivalHead(1);
         NamespacedKey key = new NamespacedKey(this, "player_head");
         ShapedRecipe rec = new ShapedRecipe(key, revivalItem);
@@ -331,6 +369,7 @@ public final class OmegaPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
+        //On disabling the plugin we save the config with the life values inside.
         saveLives();
         saveConfig();
     }
